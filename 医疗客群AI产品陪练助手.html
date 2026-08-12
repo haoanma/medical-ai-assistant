@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>医疗客群 · AI产品陪练助手</title>
+<style>
+  :root{
+    --bg:#0d1b2a; --panel:#16263a; --panel2:#1d3350; --line:#274766;
+    --brand:#c8102e; --brand2:#e63757; --gold:#d4a24a;
+    --text:#eaf1f8; --sub:#9fb3c8; --ok:#3ecf8e; --warn:#f5a623;
+    --user:#1f4e79; --ai:#1d3350;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:"PingFang SC","Microsoft YaHei",system-ui,sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+  .app{display:flex;flex-direction:column;height:100vh}
+  header{display:flex;align-items:center;gap:18px;padding:12px 22px;background:linear-gradient(90deg,#111f30,#16263a);border-bottom:2px solid var(--brand)}
+  .logo{font-weight:700;font-size:18px;white-space:nowrap}
+  .tag{font-size:11px;color:var(--sub);border:1px solid var(--line);border-radius:20px;padding:2px 10px}
+  .steps{display:flex;gap:4px;margin-left:10px}
+  .step{display:flex;align-items:center;gap:8px;padding:8px 15px;border-radius:8px;cursor:pointer;font-size:14px;color:var(--sub);border:1px solid transparent;transition:.15s}
+  .step:hover{color:var(--text)}
+  .step.active{background:var(--panel2);color:#fff;border-color:var(--line)}
+  .step .n{width:20px;height:20px;border-radius:50%;background:var(--line);color:#fff;font-size:12px;display:grid;place-items:center}
+  .step.active .n{background:var(--brand)}
+  .step.done .n{background:var(--ok)}
+  .spacer{flex:1}
+  .toggle{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--sub);user-select:none}
+  .sw{width:44px;height:24px;border-radius:20px;background:var(--line);position:relative;cursor:pointer;transition:.2s}
+  .sw.on{background:var(--ok)}
+  .sw::after{content:"";position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
+  .sw.on::after{left:23px}
+  main{display:flex;flex:1;overflow:hidden}
+  .content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .stagebar{padding:11px 26px;border-bottom:1px solid var(--line);font-size:13px;color:var(--sub);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .stagebar b{color:var(--text)}
+  .body{flex:1;overflow-y:auto;padding:22px 26px;display:flex;flex-direction:column}
+  .wrap{max-width:900px;width:100%;margin:0 auto;display:flex;flex-direction:column;flex:1}
+  /* seek */
+  .seek{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:16px 18px;font-size:16px}
+  .seek input{flex:1;min-width:220px;background:#0f2236;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:10px 13px;font-size:15px}
+  .seek input:focus{outline:none;border-color:var(--brand2)}
+  .gobtn{background:var(--brand);color:#fff;border:none;border-radius:8px;padding:11px 20px;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .gobtn:disabled{opacity:.5}
+  .quick{margin-top:11px;color:var(--sub);font-size:13px}
+  .quick span{color:var(--gold);cursor:pointer;margin:0 5px;text-decoration:underline dotted}
+  /* profile */
+  .profile{margin-top:18px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;overflow:hidden;animation:fade .3s}
+  .profile .ph{background:linear-gradient(90deg,#1d3350,#16263a);padding:15px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px}
+  .profile .ph .nm{font-size:18px;font-weight:700}
+  .profile .ph .badge{font-size:12px;background:var(--brand);border-radius:6px;padding:2px 9px}
+  .profile .pb{padding:14px 20px;font-size:14px;line-height:1.75}
+  .disc{font-size:12px;color:var(--warn);margin:2px 20px 16px;background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);border-radius:8px;padding:9px 12px;line-height:1.5}
+  /* recommend */
+  .rec{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:0;margin-bottom:10px;animation:fade .3s;overflow:hidden}
+  .rec .top{display:flex;gap:14px;align-items:center;padding:13px 16px}
+  .rec .rk{font-size:22px;font-weight:800;color:var(--gold);width:26px;text-align:center}
+  .rec .rn{font-weight:600;font-size:15px}
+  .rec .rr{font-size:13px;color:var(--sub);margin-top:4px;line-height:1.6}
+  .rec .fit{font-size:12px;background:var(--brand);border-radius:20px;padding:2px 10px;white-space:nowrap}
+  .rec .viewbtn{font-size:12px;color:var(--gold);border:1px solid var(--line);border-radius:7px;padding:5px 11px;cursor:pointer;white-space:nowrap}
+  .rec .viewbtn:hover{border-color:var(--gold)}
+  .detail{border-top:1px solid var(--line);padding:14px 18px;background:#0f2236;font-size:13px;line-height:1.7;display:none}
+  .detail.show{display:block}
+  .detail .dt{color:var(--gold);font-weight:600;margin:8px 0 3px}
+  .detail ul{margin:2px 0 0;padding-left:18px}
+  /* chat */
+  .chat{flex:1;overflow-y:auto;padding:6px 2px;display:flex;flex-direction:column;gap:12px;min-height:110px}
+  .msg{max-width:82%;padding:11px 15px;border-radius:12px;font-size:14px;line-height:1.65;white-space:pre-wrap;animation:fade .3s}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+  .msg.u{align-self:flex-end;background:var(--user);border:1px solid #2b5f92}
+  .msg.a{align-self:flex-start;background:var(--ai);border:1px solid var(--line)}
+  .msg.a .who{font-size:11px;color:var(--gold);margin-bottom:5px;font-weight:600}
+  .composer{display:flex;gap:10px;align-items:flex-end;margin-top:12px}
+  textarea{flex:1;resize:none;background:var(--panel2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:11px;font-size:14px;font-family:inherit;min-height:46px;max-height:150px;line-height:1.5}
+  textarea:focus{outline:none;border-color:var(--brand2)}
+  .send{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:0 20px;height:46px;font-size:14px;font-weight:600;cursor:pointer}
+  .send:disabled{opacity:.5;cursor:not-allowed}
+  .barbtn{display:flex;justify-content:flex-end;margin-top:14px}
+  .endstep{background:transparent;border:1px solid var(--brand);color:var(--text);border-radius:8px;padding:10px 20px;cursor:pointer;font-size:14px}
+  .endstep:hover{background:var(--brand)}
+  .roleSel{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .roleSel .lb{font-size:12px;color:var(--sub)}
+  .chip{padding:5px 12px;border-radius:20px;border:1px solid var(--line);cursor:pointer;font-size:12px;color:var(--sub)}
+  .chip.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+  .endbtn{background:var(--gold);color:#0d1b2a;border:none;border-radius:8px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
+  .empty{margin:auto;text-align:center;color:var(--sub);max-width:520px;padding:26px}
+  .empty h2{color:var(--text);font-weight:600}
+  .typing{align-self:flex-start;color:var(--sub);font-size:13px;padding:4px 8px}
+  .typing span{animation:blink 1.2s infinite}.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+  @keyframes blink{0%,100%{opacity:.2}50%{opacity:1}}
+  /* score */
+  .scorecard{background:var(--panel2);border:1px solid var(--gold);border-radius:14px;padding:22px;animation:fade .3s;max-width:640px;margin:10px auto}
+  .scorecard .big{text-align:center}
+  .scorecard .big .num{font-size:56px;font-weight:800;color:var(--gold);line-height:1}
+  .scorecard .big .lv{font-size:15px;color:var(--text);margin-top:4px}
+  .dims{display:flex;gap:10px;margin:20px 0;flex-wrap:wrap;justify-content:center}
+  .dim{flex:1;min-width:104px;background:#0f2236;border:1px solid var(--line);border-radius:9px;padding:10px;text-align:center}
+  .dim .dn{font-size:12px;color:var(--sub)}
+  .dim .dv{font-size:20px;font-weight:700;margin-top:3px}
+  .sblock{margin-top:14px}
+  .sblock .t{font-size:13px;font-weight:600;margin-bottom:5px}
+  .sblock .c{font-size:14px;line-height:1.7;color:var(--text);white-space:pre-wrap}
+  .again{margin-top:18px;text-align:center;display:flex;gap:10px;justify-content:center}
+  .again button{background:var(--brand);color:#fff;border:none;border-radius:8px;padding:10px 22px;cursor:pointer;font-size:14px}
+  .again button.gray{background:transparent;border:1px solid var(--line)}
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;place-items:center;z-index:50}
+  .modal.show{display:grid}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;width:400px;max-width:92vw}
+  .box h3{margin:0 0 4px}
+  .box p{color:var(--sub);font-size:13px;margin:0 0 18px;line-height:1.5}
+  .fld label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px}
+  .fld input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:9px 11px;font-size:14px;margin-bottom:12px}
+  .fld input:focus{outline:none;border-color:var(--brand2)}
+  .grow{display:flex;gap:10px;justify-content:flex-end}
+  .btn{padding:9px 18px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-size:13px}
+  .btn.p{background:var(--brand);border-color:var(--brand)}
+  ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">医疗客群深度求索</div>
+    <span class="tag">Tokens由haoan友情赞助</span>
+    <div class="steps">
+      <div class="step active" data-s="1" onclick="goStage(1)"><span class="n">1</span>客户信息</div>
+      <div class="step" data-s="2" onclick="goStage(2)"><span class="n">2</span>推荐产品</div>
+      <div class="step" data-s="3" onclick="goStage(3)"><span class="n">3</span>模拟营销</div>
+    </div>
+    <div class="spacer"></div>
+    <div class="toggle">AI大模型<div id="aiSw" class="sw" onclick="toggleAI()"></div><span id="aiTxt" style="color:var(--sub)">已关闭</span></div>
+  </header>
+  <main>
+    <section class="content">
+      <div class="stagebar" id="stagebar"></div>
+      <div class="body"><div class="wrap" id="wrap"></div></div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="gate">
+  <div class="box">
+    <h3>开启 AI 大模型</h3>
+    <p>调用大模型会消耗 Tokens。请回答暗号以解锁实时 AI（关闭无需验证）。</p>
+    <div class="fld"><label>Tokens 由谁友情赞助？</label><input id="gateAns" placeholder="请输入答案" autocomplete="off"></div>
+    <div id="gateErr" style="display:none;color:var(--brand2);font-size:13px;margin:-6px 0 10px">答案不对，再想想～</div>
+    <div class="grow"><button class="btn" onclick="closeGate()">取消</button><button class="btn p" onclick="checkGate()">确认开启</button></div>
+  </div>
+</div>
+
+<script>
+/* ================= 内置配置（自用演示） ================= */
+const AI={url:"https://api.deepseek.com",model:"deepseek-v4-flash",key:"sk-b0fc7bbac69a4702bdd3a8eed49a35ad"};
+let useAI=false;
+
+/* ================= 产品知识库 ================= */
+const PRODUCTS={
+  invoice:{emoji:"🧾",name:"发票核验数字员工",
+    def:"自动核验采购与报销发票真伪、查重、合规，防范虚开与重复报销风险。",
+    pain:["财务人工验票效率低、易漏检","采购/报销发票量大，税务合规压力高","重复报销、虚开难以事前拦截"],
+    say:["对接税务系统验真验重，秒级出结果","OCR自动识别录入，减少人工键入","与HIS/财务系统打通，验票留痕可追溯","事前拦截而非事后审计，降合规风险"],
+    do:["摸清医院月均发票量、当前验票流程","锁定财务处/审计处对接人","评估与现有财务系统对接方式"],
+    obj:[["我们已经有财务系统了","不替代财务系统，是嵌在报销/采购环节的前置校验，把'人工肉眼查'升级为'系统自动查'。"],
+         ["数据安全怎么保证","本地化/私有化部署可选，验真仅调用税务接口，票面数据不出院；可按等保要求配置。"]],
+    client:"三甲综合医院、民办非营利医院（报销与采购量大者）"},
+  outbound:{emoji:"📞",name:"AI外呼客服",
+    def:"智能语音外呼，用于随访、满意度回访、缴费/体检/复诊提醒。",
+    pain:["人工随访覆盖不足、体验参差","回访/提醒占用大量人力","缺少结构化回访数据沉淀"],
+    say:["真人级语音、支持高并发批量外呼","意图识别+多轮对话，可听懂患者应答","自动生成回访报告与标签","与院内系统联动，触发式外呼"],
+    do:["盘点医院随访/回访/提醒场景与月呼量","明确患者信息使用的合规边界","评估与院内叫号/随访系统对接"],
+    obj:[["患者会不会反感机器人","可先播报'医院智能助手'并支持一键转人工；通知/满意度类场景接受度高。"],
+         ["涉及患者隐私能做吗","名单由院方在合规前提下提供，按最小必要原则调用，通话可录音留痕、可审计。"]],
+    client:"三甲综合医院、专科医院（随访量大者）"},
+  opa:{emoji:"🤖",name:"医疗OPA数字员工（RPA）",
+    def:"流程自动化机器人，替代财务/运营的重复性操作：对账、报表、录入、结算。",
+    pain:["财务对账、医保结算、报表制作耗时耗力","跨系统重复搬运数据，易出错","月末/季末集中作业加班严重"],
+    say:["7×24自动执行，跨系统免接口操作","错误率极低、可留痕可回溯","上线快、见效快，按流程复用","让财务人从重复劳动转向分析判断"],
+    do:["识别医院高频、规则明确的重复流程","估算单流程耗时与人力，测算ROI","从一个高频场景切入做样板"],
+    obj:[["我们信息化程度低能上吗","RPA恰恰适合系统间无接口的场景，模拟人工操作即可，不需要改造原系统。"],
+         ["会不会取代员工","定位是'数字同事'分担重复工作，员工转向更高价值工作，通常是提质增效。"]],
+    client:"各目标医院，尤其财务/结算作业量大者"},
+  text:{emoji:"💬",name:"AI文本客服",
+    def:"面向患者与内部的智能文本问答，接入公众号/小程序/内网。",
+    pain:["咨询量大、人工响应慢","导诊、缴费、报告等高频问题重复占线","院内知识分散、口径不一"],
+    say:["知识库问答，口径统一、7×24在线","多渠道接入（公众号/小程序/内网）","转人工无缝衔接，兜底不失控","沉淀高频问题数据，反哺服务优化"],
+    do:["梳理医院高频咨询场景与知识来源","明确知识库维护责任方","规划转人工与兜底策略"],
+    obj:[["答错了怎么办","设置置信度阈值与兜底话术，低置信自动转人工；知识库由院方审定。"],
+         ["和外呼有什么区别","外呼是主动语音触达，文本客服是被动在线应答，二者可组合成服务闭环。"]],
+    client:"三甲综合医院、互联网医院"},
+  avatar:{emoji:"🧑‍🏫",name:"AI数字人讲师",
+    def:"数字人形象用于员工培训、健康宣教、政策讲解，文本一键成片。",
+    pain:["培训/宣教人力有限、排期难","内容更新慢、标准化难","优质讲解难以规模化复用"],
+    say:["形象可定制，文本一键生成讲解视频","标准化、可复用，随时更新不返工","支持多语言/方言","降低反复录制与场地成本"],
+    do:["了解医院培训与健康宣教的高频需求","明确内容审核与形象授权流程","选一个标准课程做样板片"],
+    obj:[["会不会显得不真诚","用于标准化知识讲解与宣教最合适，真人保留在有温度的互动场景。"],
+         ["制作是不是很麻烦","输入文稿即可成片，无需专业拍摄剪辑，更新只需改文稿重新生成。"]],
+    client:"三甲综合医院、教学医院"}
+};
+const ROLES={
+  finance:{name:"财务处长",face:"👩‍💼",style:"务实、关注成本与合规、爱问ROI与数据安全，语气偏强势"},
+  it:{name:"信息科长",face:"👨‍💻",style:"关注系统对接、数据安全、运维负担，技术性追问多"},
+  dean:{name:"分管副院长",face:"🧑‍⚕️",style:"关注全局价值、患者体验与政策导向，时间紧、要一句话讲清价值"}
+};
+
+/* ================= 状态 ================= */
+let stage=1, selRole="finance", selProduct=null;
+let clientProfile=null, clientHist=[];
+let recProducts=[], learnHist=[], expanded={};
+let drillHist=[], drillStarted=false;
+
+/* ================= 顶部 ================= */
+function setAIState(v){useAI=v;document.getElementById("aiSw").classList.toggle("on",v);
+  document.getElementById("aiTxt").textContent=v?"已开启":"已关闭";
+  document.getElementById("aiTxt").style.color=v?"var(--ok)":"var(--sub)";}
+function toggleAI(){if(useAI){setAIState(false);}else{openGate();}}
+function openGate(){document.getElementById("gateErr").style.display="none";
+  const i=document.getElementById("gateAns");i.value="";document.getElementById("gate").classList.add("show");setTimeout(()=>i.focus(),50);}
+function closeGate(){document.getElementById("gate").classList.remove("show");}
+function checkGate(){const a=document.getElementById("gateAns").value.trim().toLowerCase();
+  if(a==="mahaoan"){setAIState(true);closeGate();}else{document.getElementById("gateErr").style.display="block";}}
+function goStage(s){
+  if(s>=2&&!clientProfile){toast("请先在第①步获取客户信息");return;}
+  if(s>=3&&!recProducts.length){toast("请先完成第②步产品推荐");return;}
+  stage=s;
+  document.querySelectorAll(".step").forEach(el=>{const n=+el.dataset.s;
+    el.classList.toggle("active",n===s);
+    el.classList.toggle("done",(n===1&&clientProfile)||(n===2&&recProducts.length));});
+  renderStage();
+}
+function toast(t){const b=document.getElementById("stagebar");b.innerHTML='<b style="color:var(--warn)">⚠ '+t+'</b>';setTimeout(renderStage,1500);}
+
+/* ================= 渲染 ================= */
+function renderStage(){
+  const bar=document.getElementById("stagebar"),w=document.getElementById("wrap");
+  if(stage===1)renderS1(bar,w);
+  else if(stage===2)renderS2(bar,w);
+  else renderS3(bar,w);
+}
+
+/* ---------- 阶段1：客户信息（机构或个人）+ 追问 ---------- */
+function renderS1(bar,w){
+  bar.innerHTML='<b>① 客户信息</b> · 输入你要营销的客户（机构或个人均可），获取公开信息后可继续追问';
+  w.innerHTML=`
+    <div class="seek">我要去营销
+      <input id="clientInput" placeholder="如：河北燕达医院李海玲院长 / 嘉兴市第一医院 / 义乌市卫健委" value="${clientProfile?clientProfile.name:''}">
+      客户
+      <button class="gobtn" id="seekBtn" onclick="seekClient()">获取公开信息</button>
+    </div>
+    <div class="quick">快速试试：<span onclick="qc('河北燕达医院李海玲院长')">河北燕达医院李海玲院长</span>·<span onclick="qc('嘉兴市第一医院')">嘉兴市第一医院</span>·<span onclick="qc('义乌市卫健委')">义乌市卫健委</span></div>
+    <div id="s1box">${clientProfile?s1DetailHTML():''}</div>`;
+  const inp=document.getElementById("clientInput");
+  inp.addEventListener("keydown",e=>{if(e.key==="Enter")seekClient();});
+  if(clientProfile){renderChat("cChat",clientHist);document.getElementById("cInput").addEventListener("keydown",chatKey(sendClientQ));}
+}
+function s1DetailHTML(){
+  return `<div class="profile">
+      <div class="ph"><span class="nm">${clientProfile.name}</span><span class="badge">公开信息画像</span></div>
+      <div class="pb">${clientProfile.text}</div>
+    </div>
+    <div class="disc">⚠ AI依据公开信息生成的参考画像，可能有误差；正式使用前请以官方年鉴/公告/内部CRM核实。</div>
+    <div style="font-size:13px;color:var(--sub);margin:6px 0 4px">💬 可继续追问该客户（如：李院长分管哪些条线？我该找谁对接？医院采购量大概多少？）</div>
+    <div class="chat" id="cChat"></div>
+    <div class="composer">
+      <textarea id="cInput" placeholder="继续追问这个客户…"></textarea>
+      <button class="send" id="cSend" onclick="sendClientQ()">发送</button>
+    </div>
+    <div class="barbtn"><button class="endstep" onclick="goStage(2)">结束客户调研，进入产品推荐 →</button></div>`;
+}
+function qc(n){document.getElementById("clientInput").value=n;seekClient();}
+
+async function seekClient(){
+  const name=document.getElementById("clientInput").value.trim();if(!name)return;
+  const btn=document.getElementById("seekBtn");btn.disabled=true;btn.textContent="获取中…";
+  const box=document.getElementById("s1box");box.innerHTML='<div class="empty">正在检索公开市场信息…</div>';
+  let text;
+  try{text=useAI?await llm(sysClient(name),"请生成"+name+"的公开信息画像。"):(await sleep(700),demoClient(name));}
+  catch(e){text=demoClient(name)+`\n\n（AI调用失败：${e.message}，已用示例画像）`;}
+  clientProfile={name,text:text.replace(/\n/g,"<br>")};
+  clientHist=[];recProducts=[];learnHist=[];expanded={};drillHist=[];drillStarted=false;selProduct=null;
+  btn.disabled=false;btn.textContent="获取公开信息";
+  box.innerHTML=s1DetailHTML();
+  renderChat("cChat",clientHist);
+  document.getElementById("cInput").addEventListener("keydown",chatKey(sendClientQ));
+  document.querySelector('.step[data-s="1"]').classList.add("done");
+}
+function isPerson(name){return /(院长|书记|主任|处长|科长|总监|经理|董事长|理事长|教授|主席|部长|局长|总$)/.test(name);}
+function sysClient(name){
+  const person=isPerson(name);
+  if(person)return `你是招商银行机构客户部医疗行业分析助手。输入「${name}」中同时包含【机构】和【关键人】两条信息，请先从中拆分出机构名称与人物姓名/职务，再分别检索公开信息、都要给出。只用你已知的公开信息，不确定处标注"（待核实）"。用如下小标题分块，每块2-4句，简洁专业：\n【机构信息】识别出的机构名称、性质、等级、床位/规模、区域地位、学科特色\n【人物信息】识别出的人物姓名与职务、分管/专业领域、公开履历特点\n【关注点推断】该人物在决策中可能关心的重点（预算/合规/患者服务/学科等）\n【沟通与切入建议】如何破冰、以什么话题切入、可对接的下级执行部门\n不要寒暄，直接输出。`;
+  return `你是招商银行机构客户部医疗行业分析助手。请依据公开信息，为客户经理生成「${name}」的营销背景画像，只用你已知的公开信息，不确定处标注"（待核实）"。用如下小标题分块，每块2-4句：\n【机构概况】性质、等级、规模、所在地\n【市场地位】区域地位、患者量/学科特色\n【财务与规模推测】收入体量、结算/采购/资金沉淀特征的合理推断\n【金融服务机会点】存贷汇+供应链+金融科技的切入方向\n不要寒暄，直接输出。`;
+}
+function demoClient(name){
+  if(isPerson(name)){const org=name.replace(/(李海玲|[一-龥]{2,3})?(院长|书记|主任|处长|科长|总监|经理|董事长|理事长|教授|主席|部长|局长|总)$/,"").trim()||"所属机构";
+    return `【机构信息】${org}（示例画像）为区域内重点医疗机构，诊疗量与品牌影响力较强，学科门类较全。（等级/床位待核实）\n\n【人物信息】${name}为该机构主要负责人/管理层，分管整体运营或相关条线，具备较强决策影响力。（具体履历待核实）\n\n【关注点推断】作为管理层，通常更关注全局价值、患者服务、运营效率与政策合规，时间有限、偏好一句话讲清价值。\n\n【沟通与切入建议】破冰宜从机构战略或患者服务痛点切入，避免一上来堆产品；落地可对接财务处、信息科等执行部门。`;}
+  const gov=/卫健|卫生|委/.test(name);
+  if(gov)return `【机构概况】${name}为地方卫生健康行政主管部门，统筹辖区公立医疗机构与公共卫生工作。（示例）\n\n【市场地位】掌握辖区医院名录、等级与运营数据，是批量获客与政策对接关键节点。\n\n【财务与规模推测】自身资金体量有限，但对下辖医院有协调影响力；医共体整合下有批量账户机会。\n\n【金融服务机会点】以卫健委为支点推进区域资金归集、代发、供应链结算，及金融科技产品整体导入。`;
+  return `【机构概况】${name}为区域内公立综合医院（示例画像），承担较大区域诊疗量，学科门类较全。（待核实等级/床位）\n\n【市场地位】区域内头部医疗机构之一，患者量大、品牌影响力强，是存贷汇多维价值的高潜客户。\n\n【财务与规模推测】收入体量较大，医保回款存在结构性时滞，账户资金沉淀可观；采购与报销发票量大。\n\n【金融服务机会点】存款把握医保结算账户归属；结算切供应链货票账款一致；金融科技以发票核验、OPA优先。`;
+}
+async function sendClientQ(){
+  const inp=document.getElementById("cInput");const t=inp.value.trim();if(!t)return;
+  inp.value="";document.getElementById("cSend").disabled=true;
+  pushMsg("cChat","user",t);clientHist.push({role:"user",content:t});typing("cChat");
+  let reply;
+  try{reply=useAI?await llmChat(sysClientQ(),clientHist):(await sleep(600),demoClientQ(t));}
+  catch(e){reply=demoClientQ(t)+`\n\n（AI失败：${e.message}）`;}
+  stopTyping();pushMsg("cChat","assistant",reply,"AI分析助手");clientHist.push({role:"assistant",content:reply});
+  document.getElementById("cSend").disabled=false;inp.focus();
+}
+function sysClientQ(){return `你是招商银行医疗行业分析助手，正在帮客户经理研究客户「${clientProfile.name}」。已知画像：\n${clientProfile.text.replace(/<br>/g,"\n")}\n\n请结合公开信息回答客户经理关于该客户的追问，专业务实，不确定处标注"（待核实）"，多给可落地的营销建议。`;}
+function demoClientQ(t){return `关于「${clientProfile.name}」：\n结合公开信息画像，建议先明确对接部门与关键人，再匹配存贷汇+金融科技切入点。具体到"${t}"，可从其业务规模与决策关注点出发准备针对性话术。\n\n（演示内容；开启AI后为实时作答，并尽量给出该客户的具体公开信息）`;}
+
+/* ---------- 阶段2：推荐产品 + 查看详情 + 提问 ---------- */
+function renderS2(bar,w){
+  bar.innerHTML=`<b>② 推荐产品</b> · 面向 <b>${clientProfile.name}</b>，AI推荐匹配产品；可点"查看信息"看详情，也可提问`;
+  w.innerHTML=`
+    <div id="recgrid">${recProducts.length?recHTML():'<div class="empty">正在生成推荐…</div>'}</div>
+    <div style="font-size:13px;color:var(--sub);margin:6px 0 4px">💬 想深入了解某个产品/话术？直接问我：</div>
+    <div class="chat" id="lChat"></div>
+    <div class="composer">
+      <textarea id="lInput" placeholder="例如：给这个客户主推发票核验，开场白怎么讲？"></textarea>
+      <button class="send" id="lSend" onclick="sendLearn()">发送</button>
+    </div>
+    <div class="barbtn"><button class="endstep" onclick="enterDrill()">结束产品学习，进入模拟营销 →</button></div>`;
+  renderChat("lChat",learnHist);
+  document.getElementById("lInput").addEventListener("keydown",chatKey(sendLearn));
+  if(!recProducts.length)genRecommend();
+}
+function recHTML(){
+  return recProducts.map((r,i)=>{const p=PRODUCTS[r.k];const op=expanded[r.k];
+    return `<div class="rec">
+      <div class="top">
+        <div class="rk">${i+1}</div>
+        <div style="flex:1"><div class="rn">${p.emoji} ${p.name}</div><div class="rr">${r.why}</div></div>
+        <div class="fit">匹配${r.fit}</div>
+        <div class="viewbtn" onclick="toggleView('${r.k}')">${op?'收起':'查看信息'}</div>
+      </div>
+      <div class="detail ${op?'show':''}">
+        <div class="dt">定位</div>${p.def}
+        <div class="dt">客户痛点</div><ul>${p.pain.map(x=>'<li>'+x+'</li>').join('')}</ul>
+        <div class="dt">必说卖点</div><ul>${p.say.map(x=>'<li>'+x+'</li>').join('')}</ul>
+        <div class="dt">必做动作</div><ul>${p.do.map(x=>'<li>'+x+'</li>').join('')}</ul>
+        <div class="dt">常见异议应对</div><ul>${p.obj.map(o=>'<li><b>'+o[0]+'</b> → '+o[1]+'</li>').join('')}</ul>
+        <div class="dt">适配客群</div>${p.client}
+      </div></div>`;}).join("");
+}
+function toggleView(k){expanded[k]=!expanded[k];document.getElementById("recgrid").innerHTML=recHTML();}
+async function genRecommend(){
+  const grid=document.getElementById("recgrid");
+  try{
+    if(useAI){const raw=await llm(sysRec(),'请基于该客户输出产品推荐，严格用JSON数组：[{"k":"invoice|outbound|opa|text|avatar","fit":"高/中","why":"一句话理由"}]，按匹配度降序，最多4个，只输出JSON。');
+      recProducts=parseRec(raw);}
+    else{await sleep(600);recProducts=demoRec();}
+  }catch(e){recProducts=demoRec();}
+  if(!recProducts.length)recProducts=demoRec();
+  if(grid)grid.innerHTML=recHTML();
+}
+function parseRec(raw){try{const arr=JSON.parse(raw.match(/\[[\s\S]*\]/)[0]);
+  return arr.filter(x=>PRODUCTS[x.k]).map(x=>({k:x.k,fit:x.fit||"高",why:x.why||PRODUCTS[x.k].def}));}catch(e){return[];}}
+function demoRec(){const gov=/卫健|卫生|委/.test(clientProfile.name);
+  if(gov)return[{k:"opa",fit:"高",why:"辖区医院财务/结算作业量大，RPA可批量提效，作为区域整体方案抓手"},
+    {k:"avatar",fit:"高",why:"政策宣贯、健康宣教标准化，数字人讲师可规模化复用"},
+    {k:"invoice",fit:"中",why:"下辖医院采购报销合规刚需，可随资金归集一并导入"},
+    {k:"text",fit:"中",why:"区域便民咨询统一入口，提升公共服务体验"}];
+  return[{k:"invoice",fit:"高",why:"综合医院采购报销发票量大、合规刚需，切入门槛低、见效快"},
+    {k:"opa",fit:"高",why:"财务对账/医保结算重复作业繁重，ROI直观，易做样板"},
+    {k:"outbound",fit:"中",why:"患者随访/满意度回访场景明确，提升服务同时沉淀数据"},
+    {k:"text",fit:"中",why:"门诊高频咨询量大，文本客服减负、口径统一"}];
+}
+async function sendLearn(){
+  const inp=document.getElementById("lInput");const t=inp.value.trim();if(!t)return;
+  inp.value="";document.getElementById("lSend").disabled=true;
+  pushMsg("lChat","user",t);learnHist.push({role:"user",content:t});typing("lChat");
+  let reply;
+  try{reply=useAI?await llmChat(sysLearn(),learnHist):(await sleep(600),demoLearn(t));}
+  catch(e){reply=demoLearn(t)+`\n\n（AI失败：${e.message}）`;}
+  stopTyping();pushMsg("lChat","assistant",reply,"AI军师");learnHist.push({role:"assistant",content:reply});
+  document.getElementById("lSend").disabled=false;inp.focus();
+}
+function sysLearn(){return `你是招商银行医疗客群资深产品军师，正在帮客户经理准备营销「${clientProfile.name}」。产品知识库：\n${kbAll()}\n\n用专业、务实、可直接照着讲的话术回答，多给句子和下一步动作，条理清晰不啰嗦。`;}
+function demoLearn(t){let k="invoice";for(const key in PRODUCTS){if(t.includes(PRODUCTS[key].name.slice(0,2)))k=key;}const p=PRODUCTS[k];
+  return `聚焦「${p.name}」面向「${clientProfile.name}」：\n\n💡 必说卖点：\n`+p.say.map(x=>"• "+x).join("\n")+`\n\n🗣 开场白示例：\n"处长您好，针对咱们院${p.pain[0]}的情况，我们的${p.name}能${p.say[0]}、${p.say[1]}。想先了解下咱们目前怎么做，我按实际给您算笔账。"\n\n（演示内容；开启AI后为实时作答）`;}
+
+function enterDrill(){selProduct=recProducts[0].k;goStage(3);}
+
+/* ---------- 阶段3：模拟营销 + 打分 ---------- */
+function persona(){
+  if(clientProfile&&isPerson(clientProfile.name))return{label:clientProfile.name,face:"🧑‍⚕️"};
+  return{label:(clientProfile?clientProfile.name:"客户")+" · 决策负责人",face:"🧑‍⚕️"};
+}
+function renderS3(bar,w){
+  const pe=persona();
+  bar.innerHTML=`<b>③ 模拟营销</b> · AI扮演客户 <b>${pe.face} ${pe.label}</b>，你来向 TA 营销我行产品
+    ${drillStarted?'<button class="endbtn" onclick="endDrill()">结束对练并打分</button>':''}`;
+  w.innerHTML=`
+    <div class="chat" id="dChat"></div>
+    <div class="composer">
+      <textarea id="dInput" placeholder="${drillStarted?'继续你的营销话术…':'开始你的开场白，如：您好，我是招行XX支行客户经理，今天想跟您聊聊…'}"></textarea>
+      <button class="send" id="dSend" onclick="sendDrill()">发送</button>
+    </div>`;
+  if(!drillHist.length)document.getElementById("dChat").innerHTML=`<div class="empty"><div style="font-size:38px">🎭</div><h2>开始你的营销开场白</h2><div style="font-size:13px">AI以「${pe.label}」身份提出真实异议</div></div>`;
+  else renderChat("dChat",drillHist,true);
+  document.getElementById("dInput").addEventListener("keydown",chatKey(sendDrill));
+}
+async function sendDrill(){
+  const inp=document.getElementById("dInput");const t=inp.value.trim();if(!t)return;
+  inp.value="";document.getElementById("dSend").disabled=true;
+  const first=!drillStarted;drillStarted=true;
+  pushMsg("dChat","user",t);drillHist.push({role:"user",content:t});typing("dChat");
+  let reply;
+  try{reply=useAI?await llmChat(sysDrill(),drillHist):(await sleep(600),demoDrill());}
+  catch(e){reply=demoDrill()+`\n\n（AI失败：${e.message}）`;}
+  stopTyping();pushMsg("dChat","assistant",reply,persona().face+" "+persona().label);
+  drillHist.push({role:"assistant",content:reply});
+  document.getElementById("dSend").disabled=false;
+  if(first){const bar=document.getElementById("stagebar");if(!bar.querySelector(".endbtn"))bar.insertAdjacentHTML("beforeend",' <button class="endbtn" onclick="endDrill()">结束对练并打分</button>');}
+  inp.focus();
+}
+function recNames(){return (recProducts.length?recProducts.map(r=>PRODUCTS[r.k].name):Object.values(PRODUCTS).map(p=>p.name)).join("、");}
+function sysDrill(){const pe=persona();
+  return `你在扮演客户「${pe.label}」本人。以下是你的真实背景，请据此入戏、符合该客户的身份与关注点：\n${clientProfile.text.replace(/<br>/g,"\n")}\n\n招行客户经理正在向你营销这些金融科技产品（供你判断，不必主动提）：${recNames()}。\n请以真实客户口吻回应，提出符合你身份的真实异议与追问（价值、成本ROI、数据安全、系统对接、患者服务、落地难度等），不要轻易被说服，一次只说一段；对方话术到位、打消你顾虑时可逐步松口。全程保持角色，不要跳出、不要替对方说话。`;}
+function demoDrill(){const p=PRODUCTS[recProducts.length?recProducts[0].k:"invoice"];const o=p.obj[Math.floor(Math.random()*p.obj.length)];
+  const pool=[`你说的我大概明白，但——${o[0]}？`,`我们每天事挺多，你直接说，这东西对我们最实际的好处是啥？`,`${o[0]}这块我有点担心，你们怎么解决？`,`投入和效果怎么算？多久能见到效果？`,`这个跟我们现在的做法比，到底强在哪？`];
+  return `（${persona().label}）`+pool[Math.floor(Math.random()*pool.length)]+`\n\n（演示内容；开启AI后AI会以该客户身份针对你每句话真实追问）`;}
+async function endDrill(){
+  if(!drillHist.length){toast("先开始对练再打分");return;}
+  document.getElementById("wrap").innerHTML='<div class="empty">正在生成评分…</div>';
+  let sc;try{sc=useAI?await scoreByAI():(await sleep(700),demoScore());}catch(e){sc=demoScore();}
+  renderScore(sc);
+}
+async function scoreByAI(){
+  const convo=drillHist.map(m=>(m.role==="user"?"客户经理：":"客户：")+m.content).join("\n");
+  const sys=`你是招商银行医疗客群营销教练。以下是客户经理向客户「${persona().label}」营销我行金融科技产品的对练记录。请评分并严格输出JSON：{"total":0-100,"dims":{"开场破冰":0-20,"需求挖掘":0-20,"价值呈现":0-20,"异议处理":0-20,"促成推进":0-20},"good":"亮点","bad":"不足","tip":"改进建议(可直接照做)"}。只输出JSON。\n记录：\n${convo}`;
+  const raw=await llm(sys,"请评分并输出JSON。");return JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);
+}
+function demoScore(){const turns=drillHist.filter(m=>m.role==="user").length;const base=Math.min(88,52+turns*7);
+  return{total:base,dims:{开场破冰:Math.min(18,10+turns),需求挖掘:Math.min(16,8+turns*2),价值呈现:Math.min(17,9+turns*2),异议处理:Math.min(17,8+turns*2),促成推进:Math.min(15,6+turns*2)},
+    good:"能主动切入产品并回应客户提问；态度积极。",bad:"需求挖掘偏少，价值呈现偏笼统、缺量化。",
+    tip:"1）先问'咱们目前怎么做/量多大'再讲方案；2）用'原来X小时→现在Y小时'量化价值；3）结尾给明确下一步。\n\n（演示评分；开启AI后为真实评分）"};}
+function renderScore(sc){
+  const lv=sc.total>=85?"优秀 · 可独立营销":sc.total>=70?"良好 · 小幅打磨":sc.total>=60?"及格 · 需多练":"待提升 · 建议重练";
+  document.getElementById("wrap").innerHTML=`<div class="scorecard">
+    <div class="big"><div class="num">${sc.total}</div><div class="lv">${lv}</div></div>
+    <div class="dims">${Object.entries(sc.dims||{}).map(([k,v])=>`<div class="dim"><div class="dn">${k}</div><div class="dv">${v}</div></div>`).join("")}</div>
+    <div class="sblock"><div class="t" style="color:var(--ok)">✅ 亮点</div><div class="c">${sc.good||""}</div></div>
+    <div class="sblock"><div class="t" style="color:var(--warn)">⚠️ 不足</div><div class="c">${sc.bad||""}</div></div>
+    <div class="sblock"><div class="t" style="color:var(--gold)">✏️ 改进建议</div><div class="c">${sc.tip||""}</div></div>
+    <div class="again"><button onclick="resetDrill()">再练一次</button><button class="gray" onclick="goStage(1)">换个客户</button></div>
+  </div>`;}
+function resetDrill(){drillHist=[];drillStarted=false;renderStage();}
+
+/* ================= 通用 ================= */
+function chatKey(fn){return e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();fn();}};}
+function renderChat(id,hist,drill){const c=document.getElementById(id);if(!c)return;c.innerHTML="";
+  hist.forEach(m=>{const d=document.createElement("div");d.className="msg "+(m.role==="user"?"u":"a");
+    const who=m.role==="assistant"?(drill?persona().face+" "+persona().label:"AI"):"";
+    d.innerHTML=(who?`<div class="who">${who}</div>`:"")+format(m.content);c.appendChild(d);});c.scrollTop=c.scrollHeight;}
+function pushMsg(id,role,text,who){const c=document.getElementById(id);const e=c.querySelector(".empty");if(e)e.remove();
+  const d=document.createElement("div");d.className="msg "+(role==="user"?"u":"a");
+  d.innerHTML=(role==="assistant"&&who?`<div class="who">${who}</div>`:"")+format(text);c.appendChild(d);c.scrollTop=c.scrollHeight;}
+function format(t){return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");}
+function typing(id){const c=document.getElementById(id);const d=document.createElement("div");d.className="typing";d.id="typing";d.innerHTML="AI思考中<span>.</span><span>.</span><span>.</span>";c.appendChild(d);c.scrollTop=c.scrollHeight;}
+function stopTyping(){const t=document.getElementById("typing");if(t)t.remove();}
+function kb(k){const p=PRODUCTS[k];return `${p.name}｜定位:${p.def}｜痛点:${p.pain.join("、")}｜必说:${p.say.join("、")}｜必做:${p.do.join("、")}｜异议:${p.obj.map(o=>o[0]+"→"+o[1]).join("；")}｜客群:${p.client}`;}
+function kbAll(){return Object.keys(PRODUCTS).map(kb).join("\n");}
+function sysRec(){return `你是招商银行医疗客群产品配置助手。客户画像：\n${clientProfile.text.replace(/<br>/g,"\n")}\n\n可选产品：\n`+Object.entries(PRODUCTS).map(([k,p])=>`${k}: ${p.name} - ${p.def}`).join("\n");}
+async function llm(system,user){return llmChat(system,[{role:"user",content:user}]);}
+async function llmChat(system,hist){
+  const url=AI.url.replace(/\/$/,"")+"/v1/chat/completions";
+  const res=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","Authorization":"Bearer "+AI.key},
+    body:JSON.stringify({model:AI.model,messages:[{role:"system",content:system},...hist.slice(-8)],temperature:0.7})});
+  if(!res.ok)throw new Error("HTTP "+res.status);
+  const j=await res.json();return j.choices?.[0]?.message?.content||"(空回复)";}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+/* ================= 启动 ================= */
+document.getElementById("gateAns").addEventListener("keydown",e=>{if(e.key==="Enter")checkGate();});
+document.getElementById("gate").addEventListener("click",e=>{if(e.target.id==="gate")closeGate();});
+renderStage();
+</script>
+</body>
+</html>
