@@ -116,15 +116,42 @@
   .btn{padding:9px 18px;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--text);cursor:pointer;font-size:13px}
   .btn.p{background:var(--brand);border-color:var(--brand)}
   ::-webkit-scrollbar{width:8px}::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
-  /* ============ 移动端适配 ============ */
+
+  /* ---- 营销纪要表单 ---- */
+  .form{display:flex;flex-direction:column;gap:14px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .frow{display:flex;flex-direction:column;gap:6px}
+  .frow2{display:flex;gap:14px}
+  .frow2>div{flex:1;display:flex;flex-direction:column;gap:6px}
+  .form label{font-size:13px;color:var(--sub)}
+  .form input,.form select,.ta{background:#0f2236;border:1px solid var(--line);border-radius:8px;color:var(--text);padding:9px 11px;font-size:14px;font-family:inherit}
+  .form input:focus,.form select:focus,.ta:focus{outline:none;border-color:var(--brand2)}
+  .ta{resize:vertical;min-height:60px;line-height:1.55}
+  .checks{display:flex;flex-wrap:wrap;gap:8px 16px}
+  .ck{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text);cursor:pointer}
+  .ck input{width:auto}
+  .prow{background:#0f2236;border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+  .prow-h{display:flex;gap:8px;align-items:center}
+  .prow-h .pn{flex:1}
+  .rm{background:transparent;border:1px solid var(--line);color:var(--sub);border-radius:6px;width:32px;height:32px;cursor:pointer;flex:none;font-size:13px}
+  .rm:hover{border-color:var(--brand);color:var(--brand2)}
+  .addp{background:transparent;border:1px dashed var(--line);color:var(--gold);border-radius:8px;padding:9px;cursor:pointer;font-size:13px;width:100%}
+  .addp:hover{border-color:var(--gold)}
+  .memo{margin-top:18px;background:var(--panel2);border:1px solid var(--gold);border-radius:12px;overflow:hidden;animation:fade .3s}
+  .memohd{background:linear-gradient(90deg,#1d3350,#16263a);padding:12px 18px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+  .memohd .acts{display:flex;gap:8px}
+  .cpy{background:var(--brand);color:#fff;border:none;border-radius:7px;padding:6px 14px;font-size:12px;cursor:pointer}
+  .cpy.g{background:transparent;border:1px solid var(--line);color:var(--text)}
+  .memo pre{margin:0;padding:16px 18px;font-family:inherit;font-size:14px;line-height:1.8;white-space:pre-wrap;color:var(--text)}
+  /* ---- 移动端适配 ---- */
   @media (max-width:640px){
     header{flex-wrap:wrap;gap:8px 10px;padding:10px 14px}
     .logo{font-size:16px;order:1}
     .toggle{order:2;margin-left:auto;font-size:12px}
     .tag{order:3;flex-basis:100%;font-size:10px;padding:2px 8px;align-self:flex-start}
     .spacer{display:none}
-    .steps{order:4;flex-basis:100%;width:100%;margin-left:0;gap:6px}
-    .step{flex:1;justify-content:center;padding:8px 4px;font-size:13px;gap:5px}
+    .steps{order:4;flex-basis:100%;width:100%;margin-left:0;gap:5px}
+    .step{flex:1;justify-content:center;padding:8px 2px;font-size:12px;gap:4px}
+    .step .n{width:18px;height:18px;font-size:11px}
     .stagebar{padding:10px 14px;font-size:12px;gap:8px}
     .body{padding:16px 14px}
     .wrap{max-width:100%}
@@ -155,9 +182,12 @@
     .dim{min-width:calc(33% - 6px);padding:8px 6px}
     .dim .dv{font-size:17px}
     .again{flex-wrap:wrap}
-    .again button{flex:1;min-width:130px}
+    .again button{flex:1;min-width:120px}
     .box{padding:20px;width:94vw}
     .fld input{font-size:16px}
+    .frow2{flex-direction:column;gap:14px}
+    .form input,.form select,.ta{font-size:16px}
+    .memohd{flex-wrap:wrap}
   }
 </style>
 </head>
@@ -170,6 +200,7 @@
       <div class="step active" data-s="1" onclick="goStage(1)"><span class="n">1</span>客户信息</div>
       <div class="step" data-s="2" onclick="goStage(2)"><span class="n">2</span>推荐产品</div>
       <div class="step" data-s="3" onclick="goStage(3)"><span class="n">3</span>模拟营销</div>
+      <div class="step" data-s="4" onclick="goStage(4)"><span class="n">4</span>营销纪要</div>
     </div>
     <div class="spacer"></div>
     <div class="toggle">AI大模型<div id="aiSw" class="sw" onclick="toggleAI()"></div><span id="aiTxt" style="color:var(--sub)">已关闭</span></div>
@@ -264,7 +295,6 @@ function checkGate(){const a=document.getElementById("gateAns").value.trim().toL
   if(a==="mahaoan"){setAIState(true);closeGate();}else{document.getElementById("gateErr").style.display="block";}}
 function goStage(s){
   if(s>=2&&!clientProfile){toast("请先在第①步获取客户信息");return;}
-  if(s>=3&&!recProducts.length){toast("请先完成第②步产品推荐");return;}
   stage=s;
   document.querySelectorAll(".step").forEach(el=>{const n=+el.dataset.s;
     el.classList.toggle("active",n===s);
@@ -278,7 +308,8 @@ function renderStage(){
   const bar=document.getElementById("stagebar"),w=document.getElementById("wrap");
   if(stage===1)renderS1(bar,w);
   else if(stage===2)renderS2(bar,w);
-  else renderS3(bar,w);
+  else if(stage===3)renderS3(bar,w);
+  else renderS4(bar,w);
 }
 
 /* ---------- 阶段1：客户信息（机构或个人）+ 追问 ---------- */
@@ -364,7 +395,10 @@ function renderS2(bar,w){
       <textarea id="lInput" placeholder="例如：给这个客户主推发票核验，开场白怎么讲？"></textarea>
       <button class="send" id="lSend" onclick="sendLearn()">发送</button>
     </div>
-    <div class="barbtn"><button class="endstep" onclick="enterDrill()">结束产品学习，进入模拟营销 →</button></div>`;
+    <div class="barbtn" style="gap:10px;flex-wrap:wrap">
+      <button class="endstep" style="border-color:var(--line);color:var(--sub)" onclick="goStage(4)">跳过模拟营销，直接填纪要</button>
+      <button class="endstep" onclick="enterDrill()">结束产品学习，进入模拟营销 →</button>
+    </div>`;
   renderChat("lChat",learnHist);
   document.getElementById("lInput").addEventListener("keydown",chatKey(sendLearn));
   if(!recProducts.length)genRecommend();
@@ -488,9 +522,84 @@ function renderScore(sc){
     <div class="sblock"><div class="t" style="color:var(--ok)">✅ 亮点</div><div class="c">${sc.good||""}</div></div>
     <div class="sblock"><div class="t" style="color:var(--warn)">⚠️ 不足</div><div class="c">${sc.bad||""}</div></div>
     <div class="sblock"><div class="t" style="color:var(--gold)">✏️ 改进建议</div><div class="c">${sc.tip||""}</div></div>
-    <div class="again"><button onclick="resetDrill()">再练一次</button><button class="gray" onclick="goStage(1)">换个客户</button></div>
+    <div class="again"><button onclick="resetDrill()">再练一次</button><button onclick="goStage(4)">生成营销纪要 →</button><button class="gray" onclick="goStage(1)">换个客户</button></div>
   </div>`;}
 function resetDrill(){drillHist=[];drillStarted=false;renderStage();}
+
+/* ---------- 阶段4：营销纪要 ---------- */
+function fv(id){const e=document.getElementById(id);return e?e.value.trim():'';}
+function renderS4(bar,w){
+  bar.innerHTML='<b>④ 营销纪要</b> · 填写机构、客户与各产品进展，一键生成规范纪要';
+  const today=new Date().toISOString().slice(0,10);
+  const sc=clientProfile?splitClient(clientProfile.name):{org:'',person:''};
+  w.innerHTML=`
+    <div class="form">
+      <div class="frow2">
+        <div><label>机构名称</label><input id="mOrg" value="${sc.org}" placeholder="如：河北燕达医院"></div>
+        <div><label>客户名称（联系人）</label><input id="mClient" value="${sc.person}" placeholder="如：李海玲院长"></div>
+      </div>
+      <div class="frow2">
+        <div><label>拜访日期</label><input id="mDate" type="date" value="${today}"></div>
+        <div><label>客户经理</label><input id="mRm" placeholder="你的姓名"></div>
+      </div>
+      <div class="frow"><label>营销产品（可增删，每个产品下填进展 / 跟进）</label>
+        <div id="prodRows"></div>
+        <button class="addp" onclick="addProdRow()">＋ 添加产品</button>
+      </div>
+      <div class="frow2">
+        <div><label>客户意向</label><select id="mIntent"><option>意向强</option><option selected>一般</option><option>待观望</option><option>暂无</option></select></div>
+        <div></div>
+      </div>
+      <div class="frow"><label>客户整体进展与跟进</label><textarea id="mOverall" class="ta" placeholder="如：客户对整体方案认可，拟下周安排现场调研，本月内出具方案…"></textarea></div>
+      <div class="barbtn"><button class="gobtn" onclick="genMemo()">生成营销纪要</button></div>
+    </div>
+    <div id="memoOut"></div>`;
+  const pre=recProducts.length?recProducts.map(r=>PRODUCTS[r.k].name):[];
+  if(pre.length)pre.forEach(n=>addProdRow(n));else addProdRow('');
+}
+function addProdRow(name='',prog=''){
+  const c=document.getElementById('prodRows');if(!c)return;
+  const d=document.createElement('div');d.className='prow';
+  d.innerHTML=`<div class="prow-h"><input class="pn" placeholder="产品名称"><button class="rm" onclick="removeProdRow(this)" title="删除该产品">✕</button></div><textarea class="pp ta" placeholder="该产品进展 / 跟进…"></textarea>`;
+  c.appendChild(d);d.querySelector('.pn').value=name;d.querySelector('.pp').value=prog;
+}
+function removeProdRow(btn){const r=btn.closest('.prow');if(r)r.remove();}
+function splitClient(name){
+  const m=name.match(/^(.*?(?:医院|卫生院|保健院|中心|卫健委|卫生健康委员会|疾控中心|疾控|集团|分院|门诊部|诊所))(.*)$/);
+  if(m&&m[1]&&m[2].trim())return{org:m[1],person:m[2].trim()};
+  if(isPerson(name))return{org:'',person:name};
+  return{org:name,person:''};
+}
+function memoData(){
+  const prods=[...document.querySelectorAll('#prodRows .prow')].map(r=>({
+    name:r.querySelector('.pn').value.trim(),prog:r.querySelector('.pp').value.trim()
+  })).filter(p=>p.name);
+  return {org:fv('mOrg'),client:fv('mClient'),date:fv('mDate'),rm:fv('mRm'),
+    intent:fv('mIntent'),prods,overall:fv('mOverall'),
+    profile:clientProfile?clientProfile.text.replace(/<br>/g,'\n'):''};
+}
+async function genMemo(){
+  const d=memoData();const out=document.getElementById('memoOut');
+  out.innerHTML='<div class="empty">正在生成纪要…</div>';
+  let memo;
+  try{memo=useAI?await llm(sysMemo(d),'请根据要点生成营销纪要。'):(await sleep(600),demoMemo(d));}
+  catch(e){memo=demoMemo(d)+`\n\n（AI失败：${e.message}）`;}
+  renderMemo(memo);
+}
+function sysMemo(d){const pl=d.prods.map(p=>`${p.name}（进展/跟进：${p.prog||'无'}）`).join('；')||'（未填）';
+  return `你是招商银行机构客户部客户经理助手。请根据以下要点，生成一份专业、简洁、可直接归档的《客户营销纪要》，用书面公文语气，条理清晰；可补充常见的跟进建议，但不得杜撰未提供的事实。\n【客户信息调研（第一部分获取）】\n${d.profile||'（无）'}\n\n机构名称：${d.org||'（未填）'}\n客户名称：${d.client||'（未填）'}\n拜访日期：${d.date}\n客户经理：${d.rm||'（未填）'}\n营销产品及各自进展：${pl}\n客户意向：${d.intent}\n客户整体进展与跟进：${d.overall||'无'}\n\n结构包含：一、基本信息；二、客户简况（结合上述客户信息调研，用2-3句话概括客户机构性质、规模与营销机会，不要照抄原文）；三、营销产品与进展（逐个产品列示其进展/跟进）；四、客户意向；五、客户整体进展与跟进。`;}
+function demoMemo(d){const dt=d.date||new Date().toISOString().slice(0,10);
+  const pl=d.prods.length?d.prods.map(p=>`· ${p.name}\n  进展/跟进：${p.prog||'—'}`).join('\n'):'· —';
+  const brief=(d.profile||'—').replace(/\n{2,}/g,'\n').trim();
+  return `客户营销纪要\n\n一、基本信息\n机构名称：${d.org||'—'}\n客户名称：${d.client||'—'}\n拜访日期：${dt}\n客户经理：${d.rm||'—'}\n\n二、客户简况\n${brief}\n\n三、营销产品与进展\n${pl}\n\n四、客户意向\n${d.intent||'—'}\n\n五、客户整体进展与跟进\n${d.overall||'—'}\n\n（本纪要由医疗客群AI产品陪练助手根据本次营销结果生成，供跟进与归档参考；开启AI后将自动润色为规范公文语气。）`;}
+function renderMemo(text){const out=document.getElementById('memoOut');
+  out.innerHTML=`<div class="memo"><div class="memohd">营销纪要<div class="acts"><button class="cpy" onclick="copyMemo()">复制</button><button class="cpy g" onclick="downloadMemo()">下载</button></div></div><pre id="memoText"></pre></div>`;
+  document.getElementById('memoText').textContent=text;}
+function copyMemo(){const t=document.getElementById('memoText').textContent;
+  if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>{const b=document.querySelector('.cpy');const o=b.textContent;b.textContent='已复制';setTimeout(()=>b.textContent=o,1500);});}
+function downloadMemo(){const t=document.getElementById('memoText').textContent;const nm=(fv('mOrg')||fv('mClient')||'客户')+'_营销纪要.txt';
+  const b=new Blob([t],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=nm;a.click();URL.revokeObjectURL(a.href);}
+
 
 /* ================= 通用 ================= */
 function chatKey(fn){return e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();fn();}};}
